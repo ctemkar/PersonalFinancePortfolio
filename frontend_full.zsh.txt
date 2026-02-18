@@ -1,0 +1,35 @@
+#!/bin/zsh
+set -e
+
+ROOT="/Users/chetantemkar/personal-finance-app"
+FRONTEND_DIR="$ROOT/frontend"
+
+cd "$FRONTEND_DIR"
+
+echo ">>> Cleaning frontend..."
+rm -rf node_modules package-lock.json
+
+echo ">>> Installing base dependencies..."
+npm install react react-dom
+
+echo ">>> Installing Vite..."
+npm install -D vite
+
+echo ">>> Installing UI dependencies..."
+npm install @tanstack/react-query react-router-dom @supabase/supabase-js
+
+echo ">>> Installing PostCSS + Autoprefixer..."
+npm install -D postcss autoprefixer
+
+echo ">>> Tailwind v4 detected — skipping init (no longer required)."
+
+echo ">>> Overwriting frontend source files..."
+# ---------------------------------------------------------
+# PLACE YOUR ENTIRE OVERWRITE BLOCK HERE
+# ---------------------------------------------------------
+
+echo ">>> Final reinstall after overwrite..."
+rm -rf node_modules package-lock.json
+npm install
+
+echo ">>> Frontend setup complete (Tailwind v4)."
