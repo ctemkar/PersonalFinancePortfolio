@@ -1,111 +1,180 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "../lib/supabaseClient.js";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Dashboard() {
-  // Debug logs to verify environment variables
-  console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL);
-  console.log(
-    "SUPABASE KEY:",
-    import.meta.env.VITE_SUPABASE_ANON_KEY ? "Loaded" : "Missing"
-  );
-
-  const { data: loans = [], isLoading, error } = useQuery({
-    queryKey: ["loans"],
+  const { data: rawLoans, isLoading, error } = useQuery({
+    queryKey: ['loans'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("loans_dashboard")
-        .select("*")
-        .order("breakdown_value", { ascending: false });
-
-      if (error) {
-        console.error("SUPABASE ERROR:", error);
-        throw error;
-      }
-
-      return data || [];
-    },
+        .from('loans_dashboard')
+        .select('breakdown_label, breakdown_value, currency, main_value, report_name')
+        .order('breakdown_value', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
   });
 
-  const formatAmount = (value, currency) =>
-    Number(value).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }) + ` ${currency}`;
+  if (isLoading) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+        Loading Dashboard Data...
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div style={{ padding: '20px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px' }}>
+        <strong>Database Error:</strong> {error.message}
+      </div>
+    );
+  }
 
-  const loansINR = loans.filter((l) => l.currency === "INR");
-  const loansTHB = loans.filter((l) => l.currency === "THB");
+  /**
+   * NORMALIZATION LOGIC
+   * 1. Trim and Lowercase
+   * 2. Split by spaces, sort words alphabetically, join back
+   * 3. This treats "Mom Pheiyb" and "pheiyb mom" as the same key
+   */
+  const getNormalizedKey = (name, curr) => {
+    if (!name) return `unknown-${curr}`;
+    const sortedParts = name
+      .toLowerCase()
+      .trim()
+      .split(/\s+/) // split by any whitespace
+      .sort()
+      .join(' ');
+    return `${sortedParts}-${curr}`;
+  };
+
+  const aggregatedData = (rawLoans || []).reduce((acc, current) => {
+    const key = getNormalizedKey(current.breakdown_label, current.currency);
+
+    if (!acc[key]) {
+      // Keep the original label for display from the first record found
+      acc[key] = { ...current, breakdown_value: 0 };
+    }
+    
+    acc[key].breakdown_value += Number(current.breakdown_value || 0);
+    return acc;
+  }, {});
+
+  // Convert to array and sort by value descending
+  const loans = Object.values(aggregatedData).sort((a, b) => b.breakdown_value - a.breakdown_value);
+
+  const inrLoans = loans.filter(l => l.currency === "INR");
+  const thbLoans = loans.filter(l => l.currency === "THB");
+
+  const totalINR = inrLoans.reduce((acc, curr) => acc + curr.breakdown_value, 0);
+  const totalTHB = thbLoans.reduce((acc, curr) => acc + curr.breakdown_value, 0);
+
+  // Table Styles
+  const tableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    marginBottom: '40px'
+  };
+
+  const thStyle = {
+    backgroundColor: '#f1f5f9',
+    padding: '12px 24px',
+    textAlign: 'left',
+    fontSize: '11px',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    color: '#64748b',
+    letterSpacing: '0.05em'
+  };
+
+  const tdStyle = {
+    padding: '14px 24px',
+    borderBottom: '1px solid #f1f5f9',
+    fontSize: '13px',
+    color: '#334155'
+  };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Loans Dashboard</h1>
+      <header style={{ marginBottom: '40px' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+          Loans Dashboard
+        </h1>
+        <p style={{ color: '#64748b', marginTop: '8px' }}>
+          Aggregated by Name (Order and Case Insensitive).
+        </p>
+      </header>
 
-      {isLoading && <p>Loading...</p>}
-      {error && <p className="text-red-600">Failed to load loans.</p>}
+      {/* INR SECTION */}
+      {inrLoans.length > 0 && (
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#1e293b' }}>
+            Outstanding (INR)
+          </h2>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Name</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inrLoans.map((loan, index) => (
+                <tr key={`inr-${index}`}>
+                  <td style={tdStyle}>{loan.breakdown_label}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: '600', fontFamily: 'monospace' }}>
+                    {loan.breakdown_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <span style={{ color: '#94a3b8', marginLeft: '8px', fontSize: '11px' }}>INR</span>
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold' }}>
+                <td style={tdStyle}>TOTAL OUTSTANDING</td>
+                <td style={{ ...tdStyle, textAlign: 'right', color: '#2563eb', fontFamily: 'monospace' }}>
+                  {totalINR.toLocaleString(undefined, { minimumFractionDigits: 2 })} INR
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      )}
 
-      {!isLoading && !error && (
-        <div className="space-y-10">
-
-          {/* OUTSTANDING INR */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Outstanding (INR)</h2>
-
-            <div className="bg-white shadow rounded-lg p-6">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b text-left text-slate-600">
-                    <th className="py-2">Name</th>
-                    <th className="py-2 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loansINR.map((loan) => (
-                    <tr key={loan.id} className="border-b hover:bg-slate-50">
-                      <td className="py-2">{loan.breakdown_label}</td>
-                      <td className="py-2 text-right font-semibold">
-                        {formatAmount(loan.breakdown_value, loan.currency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {loansINR.length === 0 && (
-                <p className="text-slate-500 mt-4">No INR loans found.</p>
-              )}
-            </div>
-          </section>
-
-          {/* OUTSTANDING THB */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Outstanding (THB)</h2>
-
-            <div className="bg-white shadow rounded-lg p-6">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b text-left text-slate-600">
-                    <th className="py-2">Name</th>
-                    <th className="py-2 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loansTHB.map((loan) => (
-                    <tr key={loan.id} className="border-b hover:bg-slate-50">
-                      <td className="py-2">{loan.breakdown_label}</td>
-                      <td className="py-2 text-right font-semibold">
-                        {formatAmount(loan.breakdown_value, loan.currency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {loansTHB.length === 0 && (
-                <p className="text-slate-500 mt-4">No THB loans found.</p>
-              )}
-            </div>
-          </section>
-
-        </div>
+      {/* THB SECTION */}
+      {thbLoans.length > 0 && (
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#1e293b' }}>
+            Outstanding (THB)
+          </h2>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Name</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {thbLoans.map((loan, index) => (
+                <tr key={`thb-${index}`}>
+                  <td style={tdStyle}>{loan.breakdown_label}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: '600', fontFamily: 'monospace' }}>
+                    {loan.breakdown_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <span style={{ color: '#94a3b8', marginLeft: '8px', fontSize: '11px' }}>THB</span>
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold' }}>
+                <td style={tdStyle}>TOTAL OUTSTANDING</td>
+                <td style={{ ...tdStyle, textAlign: 'right', color: '#2563eb', fontFamily: 'monospace' }}>
+                  {totalTHB.toLocaleString(undefined, { minimumFractionDigits: 2 })} THB
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
       )}
     </div>
   );
