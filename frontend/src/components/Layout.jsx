@@ -1,42 +1,40 @@
+import { Link } from "react-router-dom";
+
 export default function Layout({ children }) {
   return (
-    <div className="min-h-screen flex bg-slate-100">
-
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col">
-        <div className="px-6 py-4 text-2xl font-bold border-b border-slate-800">
+    <div className="flex min-h-screen w-full bg-slate-100">
+      {/* SIDEBAR - Fixed width 64 (16rem), Dark background */}
+      <aside className="w-64 bg-slate-900 text-white flex flex-col h-screen sticky top-0">
+        <div className="p-6 text-2xl font-bold border-b border-slate-800">
           Personal Finance
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <a href="/" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          <Link to="/" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors">
             Dashboard
-          </a>
-          <a href="/transactions" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+          </Link>
+          <Link to="/transactions" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors">
             Transactions
-          </a>
-          <a href="/budgets" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+          </Link>
+          <Link to="/budgets" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors">
             Budgets
-          </a>
-          <a href="/categories" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+          </Link>
+          <Link to="/categories" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors">
             Categories
-          </a>
-          <a href="/reports" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+          </Link>
+          <Link to="/reports" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors">
             Reports
-          </a>
-          <a href="/settings" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+          </Link>
+          <Link to="/settings" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors">
             Settings
-          </a>
+          </Link>
         </nav>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1">
-        <div className="px-8 py-6">
-          {children}
-        </div>
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 p-10 overflow-auto">
+        {children}
       </main>
-
     </div>
   );
 }
