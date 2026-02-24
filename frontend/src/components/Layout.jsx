@@ -1,35 +1,42 @@
-import { Link, useLocation } from "react-router-dom";
-
 export default function Layout({ children }) {
-  const location = useLocation();
-  const linkClasses = (path) =>
-    "block px-3 py-2 rounded-md text-sm font-medium " +
-    (location.pathname === path
-      ? "bg-white text-blue-700"
-      : "text-white hover:bg-blue-500");
-
   return (
-    <div className="flex h-screen">
-      <aside className="w-64 bg-blue-700 text-white p-6 flex flex-col">
-        <div className="text-xl font-bold mb-6">Personal Finance</div>
-        <nav className="space-y-2 flex-1">
-          <Link to="/" className={linkClasses("/")}>
+    <div className="min-h-screen flex bg-slate-100">
+
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col">
+        <div className="px-6 py-4 text-2xl font-bold border-b border-slate-800">
+          Personal Finance
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          <a href="/" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
             Dashboard
-          </Link>
-          <Link to="/transactions" className={linkClasses("/transactions")}>
+          </a>
+          <a href="/transactions" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
             Transactions
-          </Link>
-          <Link to="/budgets" className={linkClasses("/budgets")}>
+          </a>
+          <a href="/budgets" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
             Budgets
-          </Link>
-          <Link to="/settings" className={linkClasses("/settings")}>
+          </a>
+          <a href="/categories" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+            Categories
+          </a>
+          <a href="/reports" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+            Reports
+          </a>
+          <a href="/settings" className="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
             Settings
-          </Link>
+          </a>
         </nav>
       </aside>
-      <main className="flex-1 p-8 overflow-y-auto bg-gray-100">
-        {children}
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1">
+        <div className="px-8 py-6">
+          {children}
+        </div>
       </main>
+
     </div>
   );
 }

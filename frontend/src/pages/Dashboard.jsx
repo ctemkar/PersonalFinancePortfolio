@@ -1,78 +1,112 @@
-import Layout from "../components/Layout.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../lib/supabaseClient.js";
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend
-} from "chart.js";
-
-ChartJS.register(
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend
-);
-
-async function fetchMonthlySummaries() {
-  const { data, error } = await supabase
-    .from("monthly_summaries")
-    .select("*")
-    .order("year", { ascending: true })
-    .order("month", { ascending: true });
-  if (error) throw error;
-  return data || [];
-}
 
 export default function Dashboard() {
-  const { data = [], isLoading, error } = useQuery({
-    queryKey: ["monthly_summaries"],
-    queryFn: fetchMonthlySummaries
+  // Debug logs to verify environment variables
+  console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL);
+  console.log(
+    "SUPABASE KEY:",
+    import.meta.env.VITE_SUPABASE_ANON_KEY ? "Loaded" : "Missing"
+  );
+
+  const { data: loans = [], isLoading, error } = useQuery({
+    queryKey: ["loans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loans_dashboard")
+        .select("*")
+        .order("breakdown_value", { ascending: false });
+
+      if (error) {
+        console.error("SUPABASE ERROR:", error);
+        throw error;
+      }
+
+      return data || [];
+    },
   });
 
-  const labels = data.map((m) => `${m.month}/${m.year}`);
-  const expenses = data.map((m) => Number(m.expenses || 0));
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: "Expenses",
-        data: expenses,
-        borderColor: "rgb(59, 130, 246)",
-        backgroundColor: "rgba(59, 130, 246, 0.2)",
-        tension: 0.3
-      }
-    ]
-  };
+  const formatAmount = (value, currency) =>
+    Number(value).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + ` ${currency}`;
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: { display: true }
-    }
-  };
+  const loansINR = loans.filter((l) => l.currency === "INR");
+  const loansTHB = loans.filter((l) => l.currency === "THB");
 
   return (
-    <Layout>
-      <h1 className="text-3xl font-bold mb-4">Personal Finance Dashboard</h1>
-      <p className="text-gray-700 mb-4">
-        Tailwind v4 is now working correctly and data is loaded from Supabase.
-      </p>
-      {isLoading && <p>Loading monthly summaries...</p>}
-      {error && <p className="text-red-600">Failed to load data.</p>}
+    <div>
+      <h1 className="text-3xl font-bold mb-6">Loans Dashboard</h1>
+
+      {isLoading && <p>Loading...</p>}
+      {error && <p className="text-red-600">Failed to load loans.</p>}
+
       {!isLoading && !error && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-2">Monthly Expenses</h2>
-          <Line data={chartData} options={options} />
+        <div className="space-y-10">
+
+          {/* OUTSTANDING INR */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Outstanding (INR)</h2>
+
+            <div className="bg-white shadow rounded-lg p-6">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b text-left text-slate-600">
+                    <th className="py-2">Name</th>
+                    <th className="py-2 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loansINR.map((loan) => (
+                    <tr key={loan.id} className="border-b hover:bg-slate-50">
+                      <td className="py-2">{loan.breakdown_label}</td>
+                      <td className="py-2 text-right font-semibold">
+                        {formatAmount(loan.breakdown_value, loan.currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {loansINR.length === 0 && (
+                <p className="text-slate-500 mt-4">No INR loans found.</p>
+              )}
+            </div>
+          </section>
+
+          {/* OUTSTANDING THB */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Outstanding (THB)</h2>
+
+            <div className="bg-white shadow rounded-lg p-6">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b text-left text-slate-600">
+                    <th className="py-2">Name</th>
+                    <th className="py-2 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loansTHB.map((loan) => (
+                    <tr key={loan.id} className="border-b hover:bg-slate-50">
+                      <td className="py-2">{loan.breakdown_label}</td>
+                      <td className="py-2 text-right font-semibold">
+                        {formatAmount(loan.breakdown_value, loan.currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {loansTHB.length === 0 && (
+                <p className="text-slate-500 mt-4">No THB loans found.</p>
+              )}
+            </div>
+          </section>
+
         </div>
       )}
-    </Layout>
+    </div>
   );
 }

@@ -1,3 +1,10 @@
+#!/bin/zsh
+set -e
+FRONTEND="/Users/chetantemkar/personal-finance-app/frontend"
+cd "$FRONTEND"
+rm -f postcss.config.js
+npm remove postcss autoprefixer @tailwindcss/postcss
+cat << 'X' > "$FRONTEND/package.json"
 {
   "name": "personal-finance-frontend",
   "version": "1.0.0",
@@ -22,3 +29,6 @@
     "vite": "^6.0.0"
   }
 }
+X
+npm install
+echo "Tailwind v4 fixed. PostCSS removed. Ready to run."

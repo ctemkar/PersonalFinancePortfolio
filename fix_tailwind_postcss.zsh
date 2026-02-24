@@ -1,3 +1,16 @@
+#!/bin/zsh
+set -e
+FRONTEND="/Users/chetantemkar/personal-finance-app/frontend"
+cd "$FRONTEND"
+npm install @tailwindcss/postcss
+cat << 'X' > "$FRONTEND/postcss.config.js"
+export default {
+  plugins: {
+    "@tailwindcss/postcss": {}
+  }
+};
+X
+cat << 'X' > "$FRONTEND/package.json"
 {
   "name": "personal-finance-frontend",
   "version": "1.0.0",
@@ -17,8 +30,14 @@
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
     "@vitejs/plugin-react-swc": "^3.7.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
     "tailwindcss": "^4.0.0",
     "vite": "^6.0.0"
   }
 }
+X
+npm install
+echo "Tailwind v4 + PostCSS fix applied."
