@@ -1,59 +1,60 @@
-import React from "react";
+import React from 'react';
 
-export default function TransactionList({ transactions, personName, total, currency, onClose }) {
-  const thStyle = { backgroundColor: '#f1f5f9', padding: '12px 24px', textAlign: 'left', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b' };
-  const tdStyle = { padding: '14px 24px', borderBottom: '1px solid #f1f5f9', fontSize: '13px', color: '#334155' };
+const TransactionList = ({ isOpen, group, onClose }) => {
+  if (!isOpen || !group) return null;
 
   return (
-    <div className="modal-content" style={{ backgroundColor: 'white', padding: '32px', borderRadius: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-        <div>
-          <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '800' }}>{personName.toUpperCase()} HISTORY</h3>
-          <div style={{ marginTop: '12px', padding: '15px', background: '#eff6ff', borderRadius: '10px', border: '1px solid #dbeafe' }}>
-            <span style={{ fontWeight: 'bold', color: '#1e40af' }}>TOTAL OUTSTANDING (TOP): </span>
-            <span style={{ fontSize: '18px', fontWeight: '900', color: '#1e40af' }}>{total.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}</span>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }}>
+      <div style={{ backgroundColor: 'white', width: '100%', maxWidth: '600px', borderRadius: '32px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '85vh', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+        
+        {/* HEADER: Total at Top */}
+        <div style={{ padding: '30px', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>{group.name}</h2>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', opacity: 0.7 }}>CONSOLIDATED HISTORY</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', opacity: 0.7 }}>TOTAL OUTSTANDING</div>
+            <div style={{ fontSize: '28px', fontWeight: '900' }}>{group.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
           </div>
         </div>
-        <div className="no-print">
-          <button onClick={() => window.print()} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', marginRight: '10px', fontWeight: 'bold' }}>Print PDF</button>
-          <button onClick={onClose} style={{ border: 'none', background: '#f1f5f9', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Close</button>
-        </div>
-      </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Date</th>
-            <th style={thStyle}>Source</th>
-            <th style={thStyle}>Full Name</th>
-            <th style={{ ...thStyle, textAlign: 'right' }}>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((t, idx) => (
-            <tr key={idx}>
-              <td style={tdStyle}>{new Date(t.norm_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-              <td style={tdStyle}>
-                <span style={{ 
-                  padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800',
-                  backgroundColor: t.source === 'Wise' ? '#e0f2fe' : '#fef2f2',
-                  color: t.source === 'Wise' ? '#0369a1' : '#dc2626'
-                }}>{t.source}</span>
-              </td>
-              <td style={tdStyle}><strong>{t.norm_name}</strong></td>
-              <td style={{ ...tdStyle, textAlign: 'right', fontWeight: '700', fontFamily: 'monospace' }}>
-                {Number(t.norm_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr style={{ backgroundColor: '#f8fafc', fontWeight: '900' }}>
-            <td colSpan="3" style={{ ...tdStyle, textAlign: 'right', fontSize: '14px' }}>TOTAL OUTSTANDING (BOTTOM):</td>
-            <td style={{ ...tdStyle, textAlign: 'right', color: '#2563eb', fontSize: '16px' }}>{total.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}</td>
-          </tr>
-        </tfoot>
-      </table>
+        {/* LIST */}
+        <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', borderBottom: '2px solid #eee', color: '#999' }}>
+                <th style={{ padding: '10px 0' }}>DATE</th>
+                <th style={{ padding: '10px 0' }}>SOURCE</th>
+                <th style={{ padding: '10px 0', textAlign: 'right' }}>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.items.map((item, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #f9f9f9' }}>
+                  <td style={{ padding: '12px 0', color: '#666' }}>{item.date}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold' }}>{item.bank_source}</td>
+                  <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: '900', fontFamily: 'monospace' }}>
+                    {parseFloat(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* FOOTER: Total at Bottom */}
+        <div style={{ padding: '20px', backgroundColor: '#f9fafb', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={onClose} style={{ backgroundColor: '#111', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>CLOSE</button>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#999', marginRight: '10px' }}>SUMMARY TOTAL:</span>
+            <span style={{ fontWeight: '900', fontSize: '22px' }}>{group.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
-}
+};
+
+export default TransactionList;

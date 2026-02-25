@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../src/lib/supabaseClient.js';
 
 export interface Transaction {
   id: string;
@@ -8,30 +8,27 @@ export interface Transaction {
   recipient: string;
   name: string;
   bank_source: string;
-  type: string;
 }
 
 export const useFinanceData = () => {
   return useQuery({
     queryKey: ['financeData'],
     queryFn: async () => {
-      // Fetch from the ONE unified view. No more 404s.
+      // Fetch from the ONE master view
       const { data, error } = await supabase
         .from('all_finance_transactions')
-        .select('*')
-        .order('date', { ascending: false });
+        .select('*');
 
-      if (error) {
-        console.error("Supabase Error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // DATA FIX: Ensure amount is a number so math works in the Dashboard
-      return (data || []).map((item: any) => ({
-        ...item,
-        amount: Number(item.amount) || 0,
-        name: item.name || item.recipient || 'Unknown',
-        date: item.date
+      // If this shows 38 in the console now, we have won.
+      console.log("Supabase returned rows:", data?.length);
+
+      return (data || []).map((t: any) => ({
+        ...t,
+        amount: Number(t.amount) || 0,
+        name: t.name || t.recipient || 'Unknown',
+        date: t.date
       })) as Transaction[];
     }
   });
