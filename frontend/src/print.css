@@ -1,0 +1,24 @@
+
+/* frontend/src/print.css */
+
+@media print {
+  /* Hide controls/navigation when printing */
+  .no-print {
+    display: none !important;
+  }
+
+  /* If you have a sidebar class in Layout, hide it too */
+  .sidebar {
+    display: none !important;
+  }
+
+  /* Make printable area full width */
+  .print-area {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+}
